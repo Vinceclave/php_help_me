@@ -1,24 +1,21 @@
 <?php 
-    require_once 'config.php'; // import 
+    require_once 'config.php';
     # handling query (POST, PUT, DELETE, READ)
 
-
-    #post
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && isset($_POST['email'])){
         $name = mysqli_real_escape_string($conn, trim($_POST['name']));
         $email = mysqli_real_escape_string($conn, trim($_POST['email']));
         $phone = isset($_POST['phonenum']) ? mysqli_real_escape_string($conn, trim($_POST['phonenum'])) : '';
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL))
             echo "invalid email format.";
-            return;
-}
-        // true
         $sql = "INSERT INTO contacts (name, email, phone) VALUES ('$name', '$email', '$phone')";
         if (mysqli_query($conn, $sql))
             echo "contact added";
         else 
             echo "error: " . mysqli_error($conn);
+    
     }
 
 
@@ -34,7 +31,10 @@ $result = mysqli_query($conn, "SELECT * FROM contacts");
 if (!$result) {
     echo "Query failed: " . mysqli_error($conn);
 }
+$contacts = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
 ?>
+
 
     <head>
         <link rel="stylesheet" href="./style.css">
@@ -49,6 +49,7 @@ if (!$result) {
         <button type="submit">Add Contact</button>  
     </form>
 
+    
     <h3> Contact Lists </h3>
     <table>
         <thead>
@@ -60,36 +61,28 @@ if (!$result) {
             </tr>
         </thead>
         <tbody>
-                 <?php if (mysqli_num_rows($result) > 0): ?>
-                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
-            <tr>
-
-                        <td>
-                            <?= htmlspecialchars($row['name']) ?> 
-                        </td>
-                        <td>
-                            <?= htmlspecialchars($row['email']) ?> 
-                        </td>
-                        <td>
-                            <?= htmlspecialchars($row['phone']) ?> 
-                        </td>
-                        <td>
-                                                        <form action="index.php" method="post">
-                                                            <input type="hidden" name="delete_id" value="<?= $row['id']?>">
-                                                            <button type="submit">Delete</button>
-                                                        </form>
-                        </td>
-            </tr>
-
-                    <?php endwhile; ?>
-                <?php else: ?>
-            <tr>
-                    
-                    <p>No contacts found.</p>
-            </tr>
-                
-                    <?php endif; ?>
+            <?php 
+                if (!empty($contacts)) :
+                    foreach($contacts as $contact):
+            ?>  
+                <tr>
+                    <td><?= htmlspecialchars($contact['name']) ?></td>
+                    <td><?= htmlspecialchars($contact['email']) ?></td>
+                    <td><?= htmlspecialchars($contact['phone']) ?></td>
+                    <td><form action="index.php" method="post" onSubmit="return confirm('are you sure you want to delete');">
+                        <input type="hidden" name="delete_id" value="<?= $contact['id'] ?>">
+                        <button type="submit">Delete</button>
+                    </form></td>
+                </tr>
+            <?php 
+                endforeach; 
+                else:
+            ?>
+                <p> No Contacts Found. </p> 
+            <?php
+                endif;
+                mysqli_close($conn)
+            ?>            
         </tbody>
-
     </table>
-    <?php mysqli_close($conn); ?>
+
